@@ -1,7 +1,7 @@
 import dlib
 import cv2
 import numpy as np
-
+import sys
 
 def get_landmarks(shape):
     landmarks = []
@@ -32,16 +32,21 @@ def masked_image(image, routes_coordinates):
 
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor('./shape_predictor_68_face_landmarks.dat')
-image = dlib.load_rgb_image('./ainda-estou-aqui.jpg')
 
-faces = detector(image, 1)
-for k, face in enumerate(faces):
-    shape = predictor(image, face)
-    landmarks = get_landmarks(shape)
-    routes = get_routes(shape)
-    shape = predictor(image, face)
-    routes_coordinates = [(landmarks[i][0], landmarks[i][1]) for i in routes]
-    copy_image = image.copy()
-    generated_image = masked_image(copy_image, routes_coordinates)
-    cv2.imwrite(f'masked_face_{k}.jpg', cv2.cvtColor(
-        generated_image, cv2.COLOR_RGB2BGR))
+def main(image_path):
+    image = dlib.load_rgb_image(image_path)
+    faces = detector(image, 1)
+    for k, face in enumerate(faces):
+        shape = predictor(image, face)
+        landmarks = get_landmarks(shape)
+        routes = get_routes(shape)
+        shape = predictor(image, face)
+        routes_coordinates = [(landmarks[i][0], landmarks[i][1]) for i in routes]
+        copy_image = image.copy()
+        generated_image = masked_image(copy_image, routes_coordinates)
+        cv2.imwrite(f'masked_face_{k}.jpg', cv2.cvtColor(
+            generated_image, cv2.COLOR_RGB2BGR))
+
+if __name__ == '__main__':
+    args = sys.argv[1:]
+    main(args[0])
