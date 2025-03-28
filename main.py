@@ -31,22 +31,24 @@ def masked_image(image, routes_coordinates):
     return out
 
 
-def create_collage(images):
-    # Determina o número de linhas e colunas para a colagem
+def create_collage(images, original_image):
+    # Usa as dimensões da imagem original
+    height, width = original_image.shape[:2]
+
+    # Cria a imagem da colagem com o tamanho da imagem original
+    collage = np.zeros((height, width, 3), dtype=np.uint8)
+
     n_images = len(images)
     if n_images == 0:
-        return None
+        return collage
 
     # Cálculo de linhas e colunas para o grid
     n_cols = int(math.ceil(math.sqrt(n_images)))
     n_rows = int(math.ceil(n_images / n_cols))
 
-    # Encontra a maior altura e largura entre as imagens
-    max_height = max(img.shape[0] for img in images)
-    max_width = max(img.shape[1] for img in images)
-
-    # Cria a imagem da colagem
-    collage = np.zeros((max_height * n_rows, max_width * n_cols, 3), dtype=np.uint8)
+    # Calcula o tamanho de cada célula na grade
+    cell_width = width // n_cols
+    cell_height = height // n_rows
 
     # Posiciona cada imagem na colagem
     idx = 0
@@ -56,16 +58,22 @@ def create_collage(images):
                 img = images[idx]
                 h, w = img.shape[:2]
 
-                # Posição da imagem na colagem
-                y_offset = i * max_height
-                x_offset = j * max_width
+                # Redimensiona a imagem para caber na célula, mantendo a proporção
+                scale = min(cell_width / w, cell_height / h)
+                new_w = int(w * scale)
+                new_h = int(h * scale)
+                resized_img = cv2.resize(img, (new_w, new_h))
 
-                # Centraliza a imagem em seu espaço na grade
-                y_center = y_offset + (max_height - h) // 2
-                x_center = x_offset + (max_width - w) // 2
+                # Posição da imagem na colagem
+                y_offset = i * cell_height
+                x_offset = j * cell_width
+
+                # Centraliza a imagem em sua célula
+                y_center = y_offset + (cell_height - new_h) // 2
+                x_center = x_offset + (cell_width - new_w) // 2
 
                 # Coloca a imagem na colagem
-                collage[y_center:y_center+h, x_center:x_center+w] = img
+                collage[y_center:y_center+new_h, x_center:x_center+new_w] = resized_img
 
                 idx += 1
 
@@ -96,7 +104,7 @@ def main(image_path):
 
     # Cria uma colagem com todas as faces
     if masked_faces:
-        collage = create_collage(masked_faces)
+        collage = create_collage(masked_faces, image)  # Passa a imagem original como referência
         cv2.imwrite('faces_collage.jpg', cv2.cvtColor(collage, cv2.COLOR_RGB2BGR))
         print(f"Colagem criada com {len(masked_faces)} faces.")
     else:
