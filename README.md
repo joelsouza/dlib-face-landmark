@@ -16,7 +16,7 @@ Example:
   python main.py ./ainda-estou-aqui.jpg
 ```
 
-## Results
+## Sample
 
 Input image:
 
